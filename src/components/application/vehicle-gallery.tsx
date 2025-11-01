@@ -1,0 +1,190 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useCalendlyOptimized } from '@/hooks/use-calendly-optimized';
+
+interface VehicleGalleryProps {
+  images: string[];
+  title: string;
+  stockNumber: string;
+  hideCalendar?: boolean;
+}
+
+export default function VehicleGallery({ images, title, stockNumber, hideCalendar = false }: VehicleGalleryProps) {
+  const router = useRouter();
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const touchStartX = useRef<number>(0);
+  const touchEndX = useRef<number>(0);
+  const calendlyRef = useRef<HTMLDivElement>(null);
+  const { initializeCalendly } = useCalendlyOptimized();
+  
+  // Immediate Calendly initialization - no delays
+  useEffect(() => {
+    if (calendlyRef.current) {
+      // Try immediately, no delays
+      initializeCalendly(
+        calendlyRef.current,
+        'https://calendly.com/uniqueleverage/scheduler?hide_event_type_details=1&hide_gdpr_banner=1'
+      );
+    }
+  }, [initializeCalendly]);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStartX.current || !touchEndX.current) return;
+    
+    const distance = touchStartX.current - touchEndX.current;
+    const isLeftSwipe = distance > 50;
+    const isRightSwipe = distance < -50;
+
+    if (isLeftSwipe && images && images.length > 1) {
+      // Swipe left - next image
+      setCurrentImageIndex((prev) => (prev + 1) % images.length);
+    }
+    
+    if (isRightSwipe && images && images.length > 1) {
+      // Swipe right - previous image
+      setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
+    }
+  };
+
+  const navigateToPhotoGallery = () => {
+    router.push(`/inventory/all/stock/${stockNumber}/photos`);
+  };
+
+  return (
+    <div>
+      {/* Mobile: Single main image - full screen width, starts at header bottom */}
+      <div className="md:hidden bg-slate-200 dark:bg-gray-700 overflow-hidden cursor-pointer hover:opacity-90 transition-opacity -mx-4 md:mx-0 relative" style={{ marginLeft: '-2rem', marginRight: '-2rem' }}>
+        {images && images.length > 0 ? (
+          <>
+            <img 
+              src={images[currentImageIndex]} 
+              alt={title}
+              className="w-full object-cover object-center transition-transform duration-300 ease-out"
+              style={{ aspectRatio: '16/9' }}
+              onClick={navigateToPhotoGallery}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+                const parent = target.parentElement;
+                if (parent) {
+                  parent.innerHTML = '<div class="flex items-center justify-center w-full text-slate-400 text-sm" style="aspect-ratio: 16/9;">No Image Available</div>';
+                }
+              }}
+            />
+          </>
+        ) : (
+          <div className="flex items-center justify-center w-full text-slate-400 dark:text-gray-500 text-sm" style={{ aspectRatio: '16/9' }}>
+            No Image Available
+          </div>
+        )}
+      </div>
+
+      {/* Desktop: Full gallery layout */}
+      <div className="hidden md:block relative">
+        <div className="flex gap-1 h-64">
+          {/* Main Image - left side */}
+          <div className="flex-1 bg-slate-200 dark:bg-gray-700 overflow-hidden cursor-pointer hover:opacity-90 transition-opacity" onClick={navigateToPhotoGallery}>
+            {images && images.length > 0 ? (
+              <img 
+                src={images[0]} 
+                alt={title}
+                className="w-full h-full object-cover object-center"
+                style={{ objectPosition: 'center 30%' }}
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                  const parent = target.parentElement;
+                  if (parent) {
+                    parent.innerHTML = '<div class="flex items-center justify-center h-full text-slate-400 text-sm">No Image Available</div>';
+                  }
+                }}
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full text-slate-400 dark:text-gray-500 text-sm">
+                No Image Available
+              </div>
+            )}
+          </div>
+          
+          {/* Small Images - right side, 2x2 grid */}
+          <div className="flex-1 grid grid-cols-2 grid-rows-2 gap-1">
+            {(images || []).slice(1, 5).map((image, i) => (
+              <div key={i} className="bg-slate-100 dark:bg-gray-600 overflow-hidden cursor-pointer hover:opacity-90 transition-opacity" onClick={navigateToPhotoGallery}>
+                <img 
+                  src={image} 
+                  alt={`${title} - Image ${i + 2}`}
+                  className="w-full h-full object-cover object-center"
+                  style={{ objectPosition: 'center 30%' }}
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                    const parent = target.parentElement;
+                    if (parent) {
+                      parent.innerHTML = '<div class="flex items-center justify-center h-full text-slate-400 text-xs">No Image</div>';
+                    }
+                  }}
+                />
+              </div>
+            ))}
+            {Array.from({ length: Math.max(0, 4 - (images?.length || 0) + 1) }).map((_, i) => (
+              <div key={`placeholder-${i}`} className="bg-slate-100 dark:bg-gray-600 flex items-center justify-center text-slate-400 dark:text-gray-500 text-xs">
+                No Image
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Show All Photos Button - Desktop Only */}
+        <div className="absolute bottom-2 right-2 z-10 hidden md:block">
+          <button
+            onClick={navigateToPhotoGallery}
+            className="inline-flex items-center px-2 py-1 bg-white dark:bg-gray-800 backdrop-blur-sm text-black dark:text-gray-100 text-sm font-medium rounded-lg border border-gray-900 dark:border-gray-600 shadow-sm hover:bg-white dark:hover:bg-gray-700 hover:shadow-md transition-all"
+          >
+            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            Show all photos
+          </button>
+        </div>
+        
+        {/* Calendly Inline Widget - Only show if hideCalendar is false */}
+        {!hideCalendar && (
+          <div className="absolute top-72 right-0 z-20 hidden md:block md:w-[48%] lg:w-[48%] xl:w-[48%]">
+            <div className="flex justify-end">
+              <div className="bg-white dark:bg-gray-800 rounded-md shadow-sm border border-gray-200 dark:border-gray-600 p-3 w-full max-w-sm">
+                <div className="text-center mb-3">
+                  <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">Schedule Test Drive</h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Book a time that works for you</p>
+                </div>
+
+                {/* Calendly Inline Widget */}
+                <div 
+                  ref={calendlyRef}
+                  style={{ 
+                    minWidth: '320px', 
+                    height: '485px',
+                    overflow: 'hidden',
+                    borderRadius: '8px'
+                  }}
+                  className="calendly-widget-container"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+        
+      </div>
+    </div>
+  );
+}
