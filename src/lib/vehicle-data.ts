@@ -52,59 +52,7 @@ export interface StyleStats {
 // Cache for the CSV data
 let cachedData: Vehicle[] | null = null;
 let lastFetchTime: number = 0;
-const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
-const LOCALSTORAGE_KEY = 'vehicleInventoryCache';
-const LOCALSTORAGE_TIME_KEY = 'vehicleInventoryCacheTime';
-
-// Load from localStorage on module initialization
-function loadFromLocalStorage(): { data: Vehicle[] | null; time: number } {
-  if (typeof window === 'undefined') return { data: null, time: 0 };
-  
-  try {
-    const cached = localStorage.getItem(LOCALSTORAGE_KEY);
-    const cachedTime = localStorage.getItem(LOCALSTORAGE_TIME_KEY);
-    
-    if (cached && cachedTime) {
-      const data = JSON.parse(cached) as Vehicle[];
-      const time = parseInt(cachedTime);
-      
-      // Check if cache is still valid
-      if (Date.now() - time < CACHE_DURATION) {
-        console.log('📦 Loaded vehicle data from localStorage:', data.length, 'vehicles');
-        return { data, time };
-      } else {
-        console.log('⏰ localStorage cache expired');
-        // Clear expired cache
-        localStorage.removeItem(LOCALSTORAGE_KEY);
-        localStorage.removeItem(LOCALSTORAGE_TIME_KEY);
-      }
-    }
-  } catch (error) {
-    console.error('Error loading from localStorage:', error);
-  }
-  
-  return { data: null, time: 0 };
-}
-
-// Save to localStorage
-function saveToLocalStorage(data: Vehicle[]) {
-  if (typeof window === 'undefined') return;
-  
-  try {
-    localStorage.setItem(LOCALSTORAGE_KEY, JSON.stringify(data));
-    localStorage.setItem(LOCALSTORAGE_TIME_KEY, Date.now().toString());
-    console.log('💾 Saved vehicle data to localStorage');
-  } catch (error) {
-    console.error('Error saving to localStorage:', error);
-  }
-}
-
-// Initialize from localStorage
-const initialCache = loadFromLocalStorage();
-if (initialCache.data) {
-  cachedData = initialCache.data;
-  lastFetchTime = initialCache.time;
-}
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 export async function fetchPublicVehicleData(): Promise<Vehicle[]> {
   console.log('fetchPublicVehicleData called');
@@ -141,10 +89,9 @@ export async function fetchPublicVehicleData(): Promise<Vehicle[]> {
     const vehicles = parseCSVData(result.data);
     console.log('Parsed vehicles:', vehicles.length);
 
-    // Cache the data in memory and localStorage
+    // Cache the data
     cachedData = vehicles;
     lastFetchTime = Date.now();
-    saveToLocalStorage(vehicles);
 
     return vehicles;
   } catch (error) {
@@ -210,10 +157,9 @@ export async function fetchVehicleData(): Promise<Vehicle[]> {
       return [];
     }
     
-    // Cache the data in memory and localStorage
+    // Cache the data
     cachedData = vehicles;
     lastFetchTime = Date.now();
-    saveToLocalStorage(vehicles);
     
     return vehicles;
   } catch (error) {

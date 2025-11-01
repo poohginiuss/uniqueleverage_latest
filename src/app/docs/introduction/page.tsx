@@ -5,20 +5,28 @@ import { SystemTheme } from "@/providers/system-theme";
 import { AuthHandler } from "@/components/auth/auth-handler";
 import { useState, useEffect, Suspense } from "react";
 import {
+    Flag05,
+    LayoutAlt01,
+    MessageChatCircle,
+    Settings01,
+    Star06,
     ChevronDown,
     User01,
     Building02,
     CreditCard01,
     ArrowLeft
 } from "@untitledui/icons";
+import { FeaturedCardReferralLink } from "@/components/application/app-navigation/base-components/featured-cards.demo";
+import { SidebarNavigationSimple } from "@/components/landing/docs/sidebar-docs";
 import { Breadcrumbs } from "@/components/application/breadcrumbs/breadcrumbs";
-import { Badge } from "@/components/base/badges/badges";
+import { BadgeWithDot, BadgeWithIcon, Badge } from "@/components/base/badges/badges";
 import { ULIntroPage } from "@/components/landing/docs/intro-content";
 import { Button as AriaButton, DialogTrigger, Popover } from "react-aria-components";
 import { Button } from "@/components/base/buttons/button";
 import { Input } from "@/components/base/input/input";
 import { Avatar } from "@/components/base/avatar/avatar";
 import { NavAccountMenu } from "@/components/application/app-navigation/base-components/nav-account-card";
+// import { BillingManagementModal } from "@/components/application/billing-management-modal";
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardNumberElement, CardExpiryElement, CardCvcElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
@@ -1222,6 +1230,56 @@ const DocsIntroductionPage = () => {
             <Suspense fallback={null}>
                 <AuthHandler />
             </Suspense>
+        <div className="flex flex-col lg:flex-row">
+            <SidebarNavigationSimple
+                activeUrl={currentView === 'intro' ? "/docs/introduction" : "/docs/introduction"}
+                items={[
+                    {
+                        label: "Getting started",
+                        href: "/",
+                        items: [
+                            { label: "Introduction", href: "/docs/introduction", icon: Star06},
+                            { label: "Request Feed", href: "/docs/request-feeds", icon: Flag05},
+                        ],
+                    },
+                    {
+                        label: "Partners",
+                        href: "/projects",
+                        items: [
+                            { label: "Integrations", href: "/docs/integrations" },
+                        ],
+                    },
+                ]}
+                footerItems={[
+                    {
+                        label: "Settings",
+                        href: "/settings",
+                        icon: Settings01,
+                    },
+                    {
+                        label: "Support",
+                        href: "/support",
+                        icon: MessageChatCircle,
+                        badge: (
+                            <BadgeWithDot color="success" type="modern" size="sm">
+                                Online
+                            </BadgeWithDot>
+                        ),
+                    },
+                    {
+                        label: "Open in browser",
+                        href: "https://www.untitledui.com/",
+                        icon: LayoutAlt01,
+                    },
+                ]}
+                featureCard={
+                    <FeaturedCardReferralLink
+                        title="Refer a friend"
+                        description="Earn 50% back for 12 months when someone uses your link."
+                        onDismiss={() => {}}
+                    />
+                }
+            />
             <main className="min-w-0 flex-1 bg-secondary_subtle dark:bg-gray-950 pb-12 shadow-none lg:bg-primary dark:lg:bg-gray-950 page-transition content-area">
                 <header className="max-lg:hidden sticky top-0 z-50 ">
                     <section
@@ -1281,6 +1339,7 @@ const DocsIntroductionPage = () => {
                     />
                 )}
             </main>
+        </div>
         </>
     );
 };

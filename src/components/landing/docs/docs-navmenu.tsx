@@ -72,9 +72,9 @@ export const LineDemo = ({ onTabChange, docsLabel = "Documentation", inventoryLa
                     className="absolute left-0 w-0.5 bg-fg-brand-primary_alt transition-all duration-150 ease-linear"
                     style={{ 
                         top: selectedTab === "docs" ? "0px" : 
-                             selectedTab === "inventory" ? "26px" : 
-                             selectedTab === "scheduling" ? "52px" : 
-                             selectedTab === "marketing" ? "78px" : "0px", 
+                             selectedTab === "inventory" ? "24px" : 
+                             selectedTab === "scheduling" ? "48px" : 
+                             selectedTab === "marketing" ? "72px" : "0px", 
                         height: "20px" 
                     }}
                 ></div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { SidebarNavigationSimple } from "@/components/landing/docs/sidebar-docs";
 import { useTheme } from "next-themes";
 import { useState } from "react";
 import { Breadcrumbs } from "@/components/application/breadcrumbs/breadcrumbs";
@@ -12,7 +13,18 @@ export default function SchedulingPage() {
     const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
 
     return (
-        <div className="flex-1 min-w-0 bg-secondary_subtle dark:bg-gray-950">
+        <div className="flex flex-col lg:flex-row min-h-screen layout-container bg-secondary_subtle dark:bg-gray-950">
+            <SidebarNavigationSimple
+                activeUrl="/scheduling"
+                searchValue=""
+                onSearchChange={() => {}}
+                hideLogoOnMobile={false}
+                showSearchOnMobile={false}
+                showBackButton={false}
+                onBack={() => {}}
+                items={[]}
+            />
+            <div className="flex-1 min-w-0 bg-secondary_subtle dark:bg-gray-950">
                 <header className="sticky top-0 z-50">
                     <section className="flex h-15 pl-7 pr-7 w-full items-center justify-between bg-primary dark:bg-gray-950 md:h-15 border-b border-secondary dark:border-gray-700">
                         <Breadcrumbs type="button">
@@ -57,6 +69,7 @@ export default function SchedulingPage() {
                         {/* Empty content for now */}
                     </div>
                 </div>
+            </div>
         </div>
     );
 }
