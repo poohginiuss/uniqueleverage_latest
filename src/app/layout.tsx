@@ -7,6 +7,7 @@ import { Theme } from "@/providers/theme";
 import { cx } from "@/utils/cx";
 import "@/styles/globals.css";
 import Script from "next/script";
+import AuthenticatedLayout from "./authenticated-layout";
 
 const inter = Inter({
     subsets: ["latin"],
@@ -48,7 +49,9 @@ export default function RootLayout({
                     <AuthProvider>
                         <RouteProvider>
                             <IntegrationsProvider>
-                                {children}
+                                <AuthenticatedLayout>
+                                    {children}
+                                </AuthenticatedLayout>
                             </IntegrationsProvider>
                         </RouteProvider>
                     </AuthProvider>

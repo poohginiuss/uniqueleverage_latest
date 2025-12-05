@@ -26,19 +26,49 @@ export async function testConnection() {
 }
 
 // Execute query helper
-export async function executeQuery(query: string, params: any[] = []) {
+export async function executeQuery(query: string, params: any[] = [], suppressErrorLog: boolean = false) {
   try {
     const [rows] = await pool.execute(query, params);
     return rows;
   } catch (error) {
-    console.error('Database query error:', error);
+    if (!suppressErrorLog) {
+      console.error('Database query error:', error);
+    }
     throw error;
+  }
+}
+
+// Cache to track if database has been initialized
+let dbInitialized = false;
+
+// Quick check if database is already initialized
+async function isDatabaseInitialized(): Promise<boolean> {
+  try {
+    // Check if all critical tables exist
+    const tables = await executeQuery(`
+      SELECT TABLE_NAME 
+      FROM information_schema.TABLES 
+      WHERE TABLE_SCHEMA = DATABASE() 
+      AND TABLE_NAME IN ('users', 'user_sessions', 'user_integrations', 'vehicles')
+    `, [], true);
+    
+    // If we have all 4 critical tables, consider it initialized
+    return Array.isArray(tables) && tables.length >= 4;
+  } catch (error) {
+    // If check fails, assume not initialized
+    return false;
   }
 }
 
 // Initialize database - create users table if it doesn't exist
 export async function initializeDatabase() {
   try {
+    // Fast path: if already initialized, skip everything
+    if (dbInitialized || await isDatabaseInitialized()) {
+      dbInitialized = true;
+      return;
+    }
+    
     // Create users table if it doesn't exist
     const createTable = `
       CREATE TABLE IF NOT EXISTS users (
@@ -133,7 +163,7 @@ export async function initializeDatabase() {
       await executeQuery(`
         ALTER TABLE user_sessions 
         ADD COLUMN remember_me BOOLEAN DEFAULT FALSE
-      `);
+      `, [], true);
       console.log('✅ remember_me column added to user_sessions');
     } catch (error: any) {
       if (error.code === 'ER_DUP_FIELDNAME') {
@@ -148,7 +178,7 @@ export async function initializeDatabase() {
       await executeQuery(`
         ALTER TABLE users 
         ADD COLUMN dms_provider VARCHAR(255) DEFAULT NULL
-      `);
+      `, [], true);
       console.log('✅ dms_provider column added to users');
     } catch (error: any) {
       if (error.code === 'ER_DUP_FIELDNAME') {
@@ -375,7 +405,7 @@ export async function initializeDatabase() {
         ALTER TABLE user_calendars 
         ADD CONSTRAINT unique_user_integration_calendar 
         UNIQUE (user_id, integration_id, calendar_id)
-      `);
+      `, [], true);
       console.log('✅ Unique constraint added successfully');
     } catch (error: any) {
       if (error.code === 'ER_DUP_KEYNAME') {
@@ -390,7 +420,7 @@ export async function initializeDatabase() {
       await executeQuery(`
         ALTER TABLE user_integrations 
         DROP INDEX unique_user_provider_type
-      `);
+      `, [], true);
       console.log('✅ Old constraint removed');
     } catch (error: any) {
       if (error.code === 'ER_CANT_DROP_FIELD_OR_KEY') {
@@ -406,7 +436,7 @@ export async function initializeDatabase() {
         ALTER TABLE user_integrations 
         ADD CONSTRAINT unique_user_provider_email 
         UNIQUE (user_id, provider, provider_email)
-      `);
+      `, [], true);
       console.log('✅ New constraint added successfully');
     } catch (error: any) {
       if (error.code === 'ER_DUP_KEYNAME') {
@@ -498,6 +528,9 @@ export async function initializeDatabase() {
     console.log('✅ User sessions table initialized');
     console.log('✅ User integrations table initialized');
     console.log('✅ User calendars table initialized');
+    
+    // Mark as initialized to skip checks on subsequent calls
+    dbInitialized = true;
   } catch (error) {
     console.error('❌ Database initialization failed:', error);
     throw error;
